@@ -28,10 +28,9 @@ measured on 2026-11-25; a site changes and this file goes stale.
   a source needed element structure; none does yet.
 - `caches.default` exists in workerd and is absent under Bun. `fetchPage` treats
   the cache as optional.
-- Browser Rendering is out of scope by decision, not by omission. A headless
-  browser costs a session per request and still carries a datacenter IP, so it
-  does not answer the actual problem: the 403s below are an egress identity
-  problem, which is what hedy solves with TLS fingerprints and proxy lanes.
+- Browser Rendering is out of scope. A headless browser costs a session per
+  request and still carries a datacenter IP, and the 403s below are an egress
+  identity problem, which hedy solves with TLS fingerprints and proxy lanes.
 
 ## QuintoAndar
 
@@ -51,18 +50,37 @@ GET static.quintoandar.com.br/img/lrg/<file>.jpeg  → 403
 
 `__NEXT_DATA__.props.pageProps.initialState`:
 
-- `houses` — map of id to card: `rentPrice`, `salePrice`, `totalCost` (rent plus
+- `houses`, a map of id to card: `rentPrice`, `salePrice`, `totalCost` (rent plus
   condo plus IPTU), `condoIptu`, `area`, `bedrooms`, `bathrooms`, `parkingSpots`,
   `isFurnished`, `amenities[]` (enum keys), `address`, `neighbourhood`, `city`,
   `type`, `listingTags`, `photos[{url, subtitle}]`.
-- `search.visibleHouses.total` — how many listings the site reports for the
+- `search.visibleHouses.total`, how many listings the site reports for the
   search: 71117 for São Paulo rent, against 26 per page.
-- `house.houseInfo` on a detail page — the same plus `condoPrice` and `iptu`
+- `house.houseInfo` on a detail page, the same plus `condoPrice` and `iptu`
   apart, `suites`, `acceptsPets`, `address.lat/lng`, `generatedDescription`,
   `lastPublishedDate`, `amenities[{key, text, value: SIM|NAO}]`, `video`.
-- `supportedCities` — 87 entries with `slug`, `regionId`, `hashId`.
-- `search.filters.pastChoices` — the bounds the site would apply itself, always
+- `supportedCities`, 87 entries with `slug`, `regionId`, `hashId`.
+- `search.filters.pastChoices`, the bounds the site would apply itself, always
   the defaults, which confirms the query string is ignored.
+
+### What the card does not carry
+
+Found by using the server against live pages:
+
+- `parkingSpaces` is the field name; `parkingSpots` is always absent.
+- Pets and furniture are not fields on a card. They exist only as amenity keys,
+  `PODE_TER_ANIMAIS_DE_ESTIMACAO` and `MOBILIADO`. Reading `acceptsPets` on a
+  card returns null for every listing, so a pets filter matched nothing.
+- A detail page marks every amenity `SIM`, `NAO` or `NAO_INFORMADO`. Skipping
+  only `NAO` puts `NAO_INFORMADO` in the result as if it were a yes.
+- `search.region.info.slug` is the page's own area, while `citySlug` is always
+  the city. Anchoring a crawl on `citySlug` makes a neighbourhood page link its
+  neighbours instead of its own streets.
+- A neighbourhood page links both streets inside it (`rua-*`, `avenida-*`) and
+  neighbouring areas (`jardim-*`, `vila-*`). Only the streets stay inside.
+- `visibleHouses.total` is the regional count for the map, not the count for the
+  page: Vila Mariana reports 10069 against 24 cards. Treat it as an order of
+  magnitude, not a promise.
 
 ### Pagination
 
@@ -104,6 +122,6 @@ so it needs its own parser.
 ## Fixtures
 
 `test/fixtures/qa-search.json` and `qa-detail.json` are trimmed copies of real
-`__NEXT_DATA__` payloads: six listings and one detail page, keeping every field
+`__NEXT_DATA__` payloads, six listings and one detail page, keeping every field
 the parsers read. `qa-links.html` is the anchor set from a real city page. The
 tests stub `fetch`, so they are deterministic and never touch the network.
