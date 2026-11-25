@@ -163,6 +163,7 @@ const SearchInput = z.object({
     ),
   sort: z.enum(["price_asc", "price_desc", "area_desc", "newest"]).default("price_asc"),
   limit: z.number().int().min(1).max(60).default(20),
+  source: sourceSchema.describe("Source id; defaults to quintoandar."),
 })
 
 const ListingRef = z.object({
@@ -191,7 +192,7 @@ export function createServer(env: Env, origin: string): McpServer {
       annotations: READ,
     },
     async (input) => {
-      const source = getSource(DEFAULT_SOURCE)
+      const source = getSource(input.source)
       const result = await source.search(env, toQuery(input))
       return json({
         source: source.id,

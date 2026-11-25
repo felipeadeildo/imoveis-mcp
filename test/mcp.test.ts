@@ -196,6 +196,17 @@ describe("mcp surface", () => {
     await client.close()
   })
 
+  test("a search on a blocked source is refused, not answered by another", async () => {
+    const client = await connect()
+    const result = await client.callTool({
+      name: "search_listings",
+      arguments: { city: "São Paulo", source: "zap" },
+    })
+    expect(result.isError).toBe(true)
+    expect((result.content as { text: string }[])[0]!.text).toMatch(/zap is not available/)
+    await client.close()
+  })
+
   test("a blocked source is refused with a reason, not a crash", async () => {
     const client = await connect()
     const result = await client.callTool({ name: "list_sources", arguments: {} })
