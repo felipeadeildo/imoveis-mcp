@@ -187,7 +187,7 @@ export function createServer(env: Env, origin: string): McpServer {
     {
       title: "Search listings",
       description:
-        "Search rental or sale listings in a Brazilian city, filtered by price, rooms, area, type and amenities. Returns compact listings sorted by price, the total the portal reports, and the areas a narrower search can use.",
+        "Search rental or sale listings in a Brazilian city, filtered by price, rooms, area, type and amenities. Returns compact listings sorted by price, the areas a narrower search can use, and total_available, the regional count the portal reports. That count is far larger than what any page holds, so treat it as an order of magnitude, not as what this search can return.",
       inputSchema: SearchInput,
       annotations: READ,
     },
