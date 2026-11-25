@@ -2,14 +2,7 @@ import { ToolError } from "../errors"
 import { quintoandar } from "./quintoandar"
 import type { Business, CrawlOptions, Listing, SearchQuery, SearchResult } from "./types"
 
-/**
- * The listing sources this server can read.
- *
- * A source joins this list only when this worker can read it, so the list says
- * what works today. The rest stay listed as unavailable, so an agent that asks
- * gets an answer instead of a wrong one. The notes are read by the model, so
- * they stay about availability; docs/RESEARCH.md has the rest.
- */
+/** The listing sources, available or not. The notes are read by the model. */
 export interface SourceEntry {
   id: string
   label: string

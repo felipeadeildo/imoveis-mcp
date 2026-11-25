@@ -146,7 +146,11 @@ const ListingRef = z.object({
   business: businessSchema,
 })
 
-export function createServer(env: Env): McpServer {
+/**
+ * `origin` is the URL this request came in on, so links point at the host the
+ * caller used, whether that is localhost or the deployed worker.
+ */
+export function createServer(env: Env, origin: string): McpServer {
   const server = new McpServer(
     { name: "imoveis-mcp", version: "0.1.0" },
     { instructions: INSTRUCTIONS },
@@ -188,9 +192,7 @@ export function createServer(env: Env): McpServer {
         seen: result.seen,
         total_available: result.totalAvailable,
         pages_fetched: result.pagesFetched,
-        crawled: result.crawled,
         areas: result.areas.map((area) => area.name),
-        server_filters: result.serverFilters,
       })
     },
   )
@@ -297,8 +299,8 @@ export function createServer(env: Env): McpServer {
         return json({
           id: listing.id,
           serve: "proxy",
-          photos: photos.map((photo) => ({ ...photo, url: proxyUrl(env.PUBLIC_BASE, photo.url) })),
-          video: listing.video ? proxyUrl(env.PUBLIC_BASE, listing.video) : null,
+          photos: photos.map((photo) => ({ ...photo, url: proxyUrl(origin, photo.url) })),
+          video: listing.video ? proxyUrl(origin, listing.video) : null,
         })
       }
 
@@ -307,6 +309,7 @@ export function createServer(env: Env): McpServer {
         try {
           const stored = await storeMedia(
             env,
+            origin,
             photo.url,
             `${source.id}/${listing.id}/photo-${index + 1}`,
           )
@@ -317,11 +320,14 @@ export function createServer(env: Env): McpServer {
       }
       let video: unknown = null
       if (listing.video) {
-        video = await storeMedia(env, listing.video, `${source.id}/${listing.id}/video`).catch(
-          (error) => ({
-            error: errorText(error),
-          }),
-        )
+        video = await storeMedia(
+          env,
+          origin,
+          listing.video,
+          `${source.id}/${listing.id}/video`,
+        ).catch((error) => ({
+          error: errorText(error),
+        }))
       }
       return json({ id: listing.id, serve: "r2", photos: saved, video })
     },

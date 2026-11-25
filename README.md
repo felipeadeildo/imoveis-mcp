@@ -4,6 +4,8 @@ Apartment listings in Brazil, as MCP tools on a Cloudflare Worker. An agent
 searches, opens a listing, looks at the photos, and hands the user links to the
 files.
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/felipeadeildo/imoveis-mcp)
+
 ## Tools
 
 | Tool               | What it does                                                                                                                                                  |
@@ -33,8 +35,61 @@ Three ways to hand media over. Only the last one keeps a copy:
 
 `see_photos` returns the photos inline as images, which needs no storage at all.
 Use `r2` only when a file has to outlive the listing, since it is the one option
-with a cost and a lifetime. The bucket binding is commented out in
-`wrangler.jsonc`.
+with a cost and a lifetime. To enable it, uncomment the `r2_buckets` entry in
+`wrangler.jsonc` and deploy again.
+
+## Deploy
+
+The button above clones this repository into your GitHub account, creates the
+Worker and deploys it. You pick the Worker name and the repository name, then
+paste the value for `MCP_TOKEN`, which the setup asks for because it is declared
+in `wrangler.jsonc`:
+
+```bash
+openssl rand -hex 32
+```
+
+That token is the whole secret. Anyone with it can call the tools, so keep it in
+a password manager and hand it only to the client you use.
+
+Deploying by hand takes two commands:
+
+```bash
+bunx wrangler login
+bunx wrangler deploy
+bunx wrangler secret put MCP_TOKEN
+```
+
+What the account needs:
+
+| Thing          | Why                                                          |
+| -------------- | ------------------------------------------------------------ |
+| Workers        | Runs the server. The free plan covers this workload.         |
+| Workers Builds | Only for the button or a Git connection. Not needed by hand. |
+| R2             | Only for `serve: "r2"`. Skip it and nothing else breaks.     |
+
+Nothing else is required. There is no database, no queue and no Durable Object.
+
+### Build settings on Cloudflare
+
+If you connect the repository through Workers Builds instead of the button, the
+settings are:
+
+| Field            | Value                   |
+| ---------------- | ----------------------- |
+| Build command    | leave empty             |
+| Deploy command   | `bunx wrangler deploy`  |
+| Preview command  | `bunx wrangler preview` |
+| Root directory   | `/`                     |
+| Environment vars | none needed             |
+
+`MCP_TOKEN` is a secret, not a variable. Add it under Settings, Variables and
+Secrets, or run `bunx wrangler secret put MCP_TOKEN`. Until it exists the Worker
+deploys and answers 401, so the deploy itself does not need it.
+
+There is no build step. The entry is TypeScript and Wrangler bundles it, so an
+empty build command is correct. `npx wrangler deploy` works if the image has no
+Bun.
 
 ## Run it
 
@@ -50,16 +105,6 @@ bun run lint      # oxlint, type-aware
 bun run fmt       # oxfmt
 bun run check     # types, lint, format, tsc and tests
 ```
-
-## Deploy
-
-```bash
-bunx wrangler deploy
-bunx wrangler secret put MCP_TOKEN
-```
-
-Set `PUBLIC_BASE` in `wrangler.jsonc` to the deployed origin, so links built by
-the worker point at the worker.
 
 ## Connect a client
 
@@ -106,3 +151,11 @@ gets an answer instead of a failed request.
 
 Unofficial, not affiliated with any listing site. It reads public listings for
 one person's own apartment search.
+
+<br>
+
+<div align="center">
+<a href="https://adeildo.dev"><img src="https://adeildo.dev/assets/images/cat.svg" width="44" alt="A cat asleep on a laptop, the adeildo.dev logo"></a>
+<br>
+<sub>Brought to you by <a href="https://adeildo.dev">adeildo.dev</a></sub>
+</div>

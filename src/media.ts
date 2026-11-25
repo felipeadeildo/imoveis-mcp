@@ -2,18 +2,14 @@ import { ToolError } from "./errors"
 import { BROWSER_HEADERS, fetchBytes } from "./http"
 
 /**
- * Media, in the shapes an agent needs. Only the last one stores anything.
+ * Media, in the four shapes a caller can ask for:
  *
- *   inline: the bytes go back as an MCP image block. Works with every client,
- *           no URL, and the photo lands in the model's context at the size we
- *           asked for: sml is 6 KB, med 11 KB, lrg 17 KB, xlg 31 KB.
- *   upstream: the source's own CDN URL. Free, and it outlives this worker as
- *           long as the listing exists. Range requests go straight to the CDN,
- *           so a video seeks normally.
- *   proxy: the same bytes through this worker, cached at the edge. Useful when
- *           the link should not name the source.
- *   r2: a copy in the bucket. Only when the binding exists, because it is the
- *           one path with a cost and a lifetime.
+ *   inline: bytes in an MCP image block, at the size requested. sml is 6 KB,
+ *           med 11 KB, lrg 17 KB, xlg 31 KB.
+ *   upstream: the source's CDN URL. Range requests go to the CDN, so video
+ *           seeks normally.
+ *   proxy: the same bytes through this worker, cached at the edge.
+ *   r2: a copy in the bucket, when the binding exists.
  */
 
 const MAX_INLINE_BYTES = 700_000
@@ -58,9 +54,9 @@ export function proxyUrl(base: string, upstream: string): string {
 /**
  * Stream one upstream file through the worker.
  *
- * A range request is passed upstream untouched and answered as 206, which is
- * what makes a video seekable without storing it. A ranged response is never
- * cached: a partial body under the full URL would corrupt the next request.
+ * A range request goes upstream untouched and comes back as 206. A ranged
+ * response is never cached: a partial body under the full URL would corrupt the
+ * next request.
  */
 export async function proxyMedia(upstream: string, request: Request): Promise<Response> {
   assertMediaHost(upstream)
@@ -70,8 +66,7 @@ export async function proxyMedia(upstream: string, request: Request): Promise<Re
   const response = await fetch(upstream, {
     headers: {
       ...BROWSER_HEADERS,
-      // `identity` matters: a decompressed body would make the passed-through
-      // content-length and content-range lie about the bytes.
+      // A decompressed body would make content-length and content-range lie.
       "accept-encoding": "identity",
       ...(range ? { range } : {}),
     },
@@ -99,7 +94,12 @@ export interface StoredMedia {
   contentType: string
 }
 
-export async function storeMedia(env: Env, url: string, keyPrefix: string): Promise<StoredMedia> {
+export async function storeMedia(
+  env: Env,
+  origin: string,
+  url: string,
+  keyPrefix: string,
+): Promise<StoredMedia> {
   assertMediaHost(url)
   if (!env.MEDIA) {
     throw new ToolError(
@@ -118,7 +118,7 @@ export async function storeMedia(env: Env, url: string, keyPrefix: string): Prom
   })
   return {
     key,
-    url: `${env.PUBLIC_BASE.replace(/\/+$/, "")}/media/${key}`,
+    url: `${origin.replace(/\/+$/, "")}/media/${key}`,
     bytes: bytes.byteLength,
     contentType,
   }

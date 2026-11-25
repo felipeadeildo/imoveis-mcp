@@ -5,20 +5,10 @@
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
-  // Declared so `wrangler types` and `wrangler deploy` know the worker needs it,
-  // without the value ever living in this file.
   "secrets": { "required": ["MCP_TOKEN"] },
   "vars": {
-    // Set it to your deployed origin; media links and the proxy are built from it.
-    "PUBLIC_BASE": "http://localhost:8787",
-    // Seconds a page is reused from the edge cache. Listings change slowly.
     "PAGE_TTL": "600",
-    // Largest upstream page we are willing to buffer, in bytes.
     "MAX_PAGE_BYTES": "4000000",
   },
-  // Optional. Photos come back inline, links point at the portal's CDN, and
-  // /media/proxy streams without storing anything, so nothing here needs a
-  // bucket. Add one only to keep media after a listing disappears upstream:
-  // "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "imoveis-mcp-media" }],
   "workers_dev": true,
 }

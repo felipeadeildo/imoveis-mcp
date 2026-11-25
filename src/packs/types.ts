@@ -55,7 +55,7 @@ export interface SearchQuery {
   furnished?: boolean | undefined
   acceptsPets?: boolean | undefined
   amenities?: string[] | undefined
-  /** Crawl linked areas as well, to get past one page's worth of listings. */
+  /** Crawl the linked areas as well, for more listings than one page holds. */
   deep?: boolean | undefined
   sort?: "price_asc" | "price_desc" | "area_desc" | "newest" | undefined
   limit: number
@@ -72,14 +72,10 @@ export interface SearchResult {
   pagesFetched: number
   /** Listings read before filtering. */
   seen: number
-  /** Listings the portal says exist for this search. */
+  /** Listings the source says exist for this search. */
   totalAvailable: number | null
-  /** Page slugs that were crawled. */
-  crawled: string[]
-  /** Areas linked from the crawled pages, for a narrower search. */
+  /** Areas linked from the first page, for a narrower search. */
   areas: Area[]
-  /** Filters the source applies itself. Empty means everything was filtered here. */
-  serverFilters: string[]
 }
 
 export interface CrawlOptions {

@@ -43,7 +43,7 @@ function stubFetch(searchBody: string, detailBody = searchBody): () => void {
 }
 
 function testEnv(): never {
-  return { MCP_TOKEN: "x".repeat(32), PUBLIC_BASE: "http://localhost:8787" } as never
+  return { MCP_TOKEN: "x".repeat(32) } as never
 }
 
 describe("search page", () => {
@@ -231,8 +231,7 @@ describe("crawl", () => {
       const result = await quintoandar.search(testEnv(), query({ deep: true }))
       expect(result.pagesFetched).toBeGreaterThan(2)
       expect(result.pagesFetched).toBeLessThanOrEqual(8)
-      expect(new Set(result.crawled).size).toBe(result.crawled.length)
-      // The stub returns the same six listings everywhere, so dedupe keeps six.
+      // The stub answers every page with the same six listings, so dedupe keeps six.
       expect(result.seen).toBe(6)
     } finally {
       restore()

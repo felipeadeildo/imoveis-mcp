@@ -58,7 +58,12 @@ export default {
 
     if (url.pathname === MCP_ROUTE) {
       if (!(await authorized(request, env))) return unauthorized(request)
-      return createMcpHandler(() => createServer(env), { route: MCP_ROUTE })(request, env, ctx)
+      const origin = url.origin
+      return createMcpHandler(() => createServer(env, origin), { route: MCP_ROUTE })(
+        request,
+        env,
+        ctx,
+      )
     }
 
     return new Response("not found", { status: 404 })

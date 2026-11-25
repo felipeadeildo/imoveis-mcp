@@ -43,12 +43,12 @@ function stubFetch(): { restore: () => void; requests: string[] } {
 }
 
 function env(overrides: Partial<Record<string, unknown>> = {}): never {
-  return { MCP_TOKEN: "a".repeat(32), PUBLIC_BASE: "http://localhost:8787", ...overrides } as never
+  return { MCP_TOKEN: "a".repeat(32), ...overrides } as never
 }
 
 async function connect(environment = env()) {
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair()
-  const server = createServer(environment)
+  const server = createServer(environment, "http://localhost:8787")
   await server.connect(serverTransport)
   const client = new Client({ name: "test", version: "1" }, { capabilities: {} })
   await client.connect(clientTransport)
@@ -95,7 +95,8 @@ describe("mcp surface", () => {
     expect(payload.listings[0]).toMatchObject({ business: "rent", partial: true })
     expect(payload.listings[0].photo_count).toBeGreaterThan(0)
     expect(payload.areas.length).toBeGreaterThan(0)
-    expect(payload.server_filters).toEqual([])
+    expect(payload.total_available).toBe(71117)
+    expect(payload.pages_fetched).toBe(2)
     await client.close()
   })
 

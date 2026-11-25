@@ -31,20 +31,12 @@ function numberVar(value: string | undefined, fallback: number, minimum: number)
   return Number.isFinite(parsed) && parsed >= minimum ? parsed : fallback
 }
 
-/**
- * The edge cache, when the runtime has one. `caches.default` is absent under
- * `bun test`, so caching stays an optimisation and never a requirement.
- */
+/** `caches.default` is absent under `bun test`, so caching stays optional. */
 function edgeCache(): Cache | undefined {
   return typeof caches === "undefined" ? undefined : caches.default
 }
 
-/**
- * Fetch one URL and buffer its body, with a size cap.
- *
- * The body stays bytes: pages are decoded by the caller that wants text, and
- * media goes through untouched. Decoding here would corrupt a JPEG.
- */
+/** Fetch one URL and buffer its body, with a size cap. The body stays bytes. */
 async function fetchLimited(url: string, env: Env, options: FetchOptions): Promise<Response> {
   const ttl = options.ttl ?? numberVar(env.PAGE_TTL, DEFAULT_TTL, 0)
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS

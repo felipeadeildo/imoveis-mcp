@@ -321,7 +321,6 @@ export async function listCities(env: Env, business: Business): Promise<City[]> 
 interface Pool {
   listings: Listing[]
   pagesFetched: number
-  crawled: string[]
   totalAvailable: number | null
   areas: Area[]
 }
@@ -360,13 +359,7 @@ async function crawl(env: Env, business: Business, seed: string, maxPages: numbe
     await read(area.slug, 1)
   }
 
-  return {
-    listings: [...byId.values()],
-    pagesFetched,
-    crawled: [...crawled],
-    totalAvailable,
-    areas: seedPage.areas,
-  }
+  return { listings: [...byId.values()], pagesFetched, totalAvailable, areas: seedPage.areas }
 }
 
 export const quintoandar: Source = {
@@ -392,9 +385,7 @@ export const quintoandar: Source = {
       pagesFetched: pool.pagesFetched,
       seen: pool.listings.length,
       totalAvailable: pool.totalAvailable,
-      crawled: pool.crawled,
       areas: pool.areas,
-      serverFilters: [],
     }
   },
 
