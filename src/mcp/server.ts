@@ -3,10 +3,10 @@ import { z } from "zod"
 
 import { toBase64 } from "../bytes"
 import { errorText } from "../errors"
-import { inlineImage, proxyUrl, storeMedia } from "../media"
+import { atSize, inlineImage, proxyUrl, storeMedia } from "../media"
 import { DEFAULT_SOURCE, describeSources, getSource } from "../packs/registry"
 import { listCities } from "../packs/quintoandar"
-import type { Listing } from "../packs/types"
+import type { Listing, SearchQuery } from "../packs/types"
 
 const INSTRUCTIONS = `Find flats in Brazil for a user, from public listing pages.
 
@@ -37,10 +37,10 @@ const WRITE = {
   openWorldHint: true,
 } as const
 
-const PHOTO_SIZE = /\/(sml|med|lrg|xlg)\//
-
 const businessSchema = z.enum(["rent", "sale"]).default("rent")
-const sizeSchema = z.enum(["sml", "med", "lrg", "xlg"])
+const sizeSchema = z
+  .enum(["sml", "med", "lrg", "xlg"])
+  .describe("Photo size: sml 6 KB, med 11 KB, lrg 17 KB, xlg 31 KB.")
 const sourceSchema = z.string().default(DEFAULT_SOURCE)
 
 function json(value: unknown): CallToolResult {
@@ -49,6 +49,31 @@ function json(value: unknown): CallToolResult {
 
 function text(value: string): CallToolResult["content"][number] {
   return { type: "text", text: value }
+}
+
+/**
+ * The tool takes snake_case, the source speaks camelCase. One table, so a new
+ * filter is one line in the schema and one here.
+ */
+function toQuery(input: z.infer<typeof SearchInput>): SearchQuery {
+  return {
+    city: input.city,
+    neighborhood: input.neighborhood,
+    business: input.business,
+    priceMin: input.price_min,
+    priceMax: input.price_max,
+    bedroomsMin: input.bedrooms_min,
+    bathroomsMin: input.bathrooms_min,
+    parkingMin: input.parking_min,
+    areaMin: input.area_min,
+    types: input.types,
+    furnished: input.furnished,
+    acceptsPets: input.accepts_pets,
+    amenities: input.amenities,
+    deep: input.deep,
+    sort: input.sort,
+    limit: input.limit,
+  }
 }
 
 /** Nulls cost tokens and say nothing, so absent fields are simply absent. */
@@ -167,24 +192,7 @@ export function createServer(env: Env, origin: string): McpServer {
     },
     async (input) => {
       const source = getSource(DEFAULT_SOURCE)
-      const result = await source.search(env, {
-        city: input.city,
-        neighborhood: input.neighborhood,
-        business: input.business,
-        priceMin: input.price_min,
-        priceMax: input.price_max,
-        bedroomsMin: input.bedrooms_min,
-        bathroomsMin: input.bathrooms_min,
-        parkingMin: input.parking_min,
-        areaMin: input.area_min,
-        types: input.types,
-        furnished: input.furnished,
-        acceptsPets: input.accepts_pets,
-        amenities: input.amenities,
-        deep: input.deep,
-        sort: input.sort,
-        limit: input.limit,
-      })
+      const result = await source.search(env, toQuery(input))
       return json({
         source: source.id,
         listings: result.listings.map(present),
@@ -255,7 +263,7 @@ export function createServer(env: Env, origin: string): McpServer {
           ? `${position}/${listing.photos.length}: ${photo.caption}`
           : `${position}/${listing.photos.length}`
         try {
-          const image = await inlineImage(photo.url.replace(PHOTO_SIZE, `/${input.size}/`), env)
+          const image = await inlineImage(atSize(photo.url, input.size), env)
           content.push(
             { type: "image", data: toBase64(image.bytes), mimeType: image.mimeType },
             text(label),
@@ -289,7 +297,7 @@ export function createServer(env: Env, origin: string): McpServer {
       const listing = await source.detail(env, input.id, input.business)
       const photos = listing.photos.slice(0, input.limit).map((photo) => ({
         caption: photo.caption,
-        url: photo.url.replace(PHOTO_SIZE, `/${input.size}/`),
+        url: atSize(photo.url, input.size),
       }))
 
       if (input.serve === "upstream") {

@@ -4,8 +4,7 @@
  * The pages this server reads are server-rendered Next.js: the search result
  * set is one JSON blob inside `<script id="__NEXT_DATA__">`, and the links we
  * follow are plain anchors. Both are a single pass over the page text, so the
- * readers here take a string and nothing else. A page is at most a few MB, and
- * the body is already in memory by the time we look at it.
+ * readers here take a string and nothing else.
  */
 
 const NEXT_DATA = /<script[^>]*id="__NEXT_DATA__"[^>]*>([\s\S]*?)<\/script>/i
@@ -17,10 +16,8 @@ export function nextDataScript(html: string): string | null {
 }
 
 /**
- * The parsed `__NEXT_DATA__` payload, or null when the page has none.
- *
- * This is untrusted input, so it comes back as `unknown` and each reader
- * narrows what it needs.
+ * The parsed `__NEXT_DATA__` payload, or null when the page has none. This is
+ * untrusted input, so it comes back as `unknown` and each reader narrows it.
  */
 export function nextData(html: string): unknown {
   const script = nextDataScript(html)
@@ -54,10 +51,8 @@ export function slugify(value: string): string {
 }
 
 /**
- * A number, or null.
- *
- * The JSON carries numbers. A string arrives when a field was written by a
- * person, as "R$ 1.200,50", so it is read with a comma as the decimal mark.
+ * A number, or null. A string arrives as "R$ 1.200,50" when a person wrote the
+ * field, so a comma is read as the decimal mark.
  */
 export function toNumber(value: unknown): number | null {
   if (typeof value === "number") return Number.isFinite(value) ? value : null

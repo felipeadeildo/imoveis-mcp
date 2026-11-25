@@ -1,9 +1,4 @@
-/**
- * An error whose message is meant for the model, not the logs.
- *
- * The hint is folded into the message because an MCP client only sees
- * `error.message`; keeping it in a separate field would hide it.
- */
+/** An error whose message reaches the model, so it says what to do next. */
 export class ToolError extends Error {
   constructor(message: string, hint?: string) {
     super(hint ? `${message} (${hint})` : message)
@@ -11,7 +6,7 @@ export class ToolError extends Error {
   }
 }
 
-/** The upstream answered, but not with something we can use. */
+/** The site answered, but not with something we can use. */
 export class UpstreamError extends ToolError {
   constructor(
     readonly url: string,
@@ -21,7 +16,7 @@ export class UpstreamError extends ToolError {
     super(
       `upstream ${status} for ${url}${detail ? `: ${detail}` : ""}`,
       status === 403 || status === 429
-        ? "the site is rate limiting or blocking this worker's IP; retry later or fall back to another source"
+        ? "the site is blocking this worker's IP; try another source"
         : undefined,
     )
     this.name = "UpstreamError"

@@ -1,34 +1,22 @@
 import { ToolError } from "../errors"
 import { fetchText } from "../http"
+import { type Size, atSize } from "../media"
 import { links, nextData, slugify, toNumber } from "../html"
 import type { Area, Business, Listing, Photo, SearchQuery, SearchResult, Source } from "./types"
 
 /**
  * QuintoAndar.
  *
- * Everything here was measured against the live site on 2026-11-25 with a
- * plain fetch; docs/RESEARCH.md keeps the request log.
+ * A search page carries `initialState.houses`, a map of listing id to card, and
+ * `search.visibleHouses.total`, the number of listings the site reports for the
+ * search. The detail page adds `house.houseInfo` with the rest.
  *
- * A search page is server-rendered Next.js. `__NEXT_DATA__` carries
- * `props.pageProps.initialState.houses`, a map of listing id to card, and
- * `search.visibleHouses.total`, the number of listings the portal says exist
- * for that search. A card has prices, area, rooms, address, neighbourhood and
- * the photo filenames. The detail page adds `house.houseInfo`: readable amenity
- * names, condo and IPTU apart, suites, pets, coordinates and the description.
- *
- * Two limits shape the crawl:
- *
- * - The site ignores query-string filters. `?precoMinimo=`, `?quartos=`,
- *   `?vagasDeGaragem=`, `?areaMinima=` and `?tiposDeImovel=` all return the
- *   page you would get without them, so filtering happens in applyQuery.
- * - The site serves two result pages, not more: `?page=3` repeats page 1 and
- *   `?page=4` repeats page 2. Real paging lives behind the app's API, which
- *   answers 404 without a session. Coverage therefore comes from the pages a
- *   search page links to: neighbourhoods of a city, streets of a neighbourhood.
+ * Two site limits shape the crawl: the query string is ignored, so filters run
+ * in applyQuery, and only two result pages exist per area, so more coverage
+ * comes from the pages the site links to. docs/RESEARCH.md has the measurements.
  */
 
 const ORIGIN = "https://www.quintoandar.com.br"
-const PHOTO_SIZE = /\/(sml|med|lrg|xlg)\//
 const CITY_INDEX_TTL = 86_400
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -65,14 +53,9 @@ export function detailPath(id: string, business: Business): string {
   return `/imovel/${id}/${business === "rent" ? "alugar" : "comprar"}`
 }
 
-/**
- * Photo URLs arrive as bare filenames in the JSON and as absolute URLs in the
- * markup. Both resolve, and the size is a path segment: the same photo costs
- * about 6, 11, 17 or 31 KB at sml, med, lrg or xlg.
- */
-export function photoUrl(file: string, size: "sml" | "med" | "lrg" | "xlg" = "lrg"): string {
-  if (PHOTO_SIZE.test(file)) return file.replace(PHOTO_SIZE, `/${size}/`)
-  if (file.startsWith("http")) return file
+/** Photos arrive as bare filenames in the JSON and as full URLs in the markup. */
+export function photoUrl(file: string, size: Size = "lrg"): string {
+  if (file.startsWith("http")) return atSize(file, size)
   return `${ORIGIN}/img/${size}/${file.replace(/^\/+/, "")}`
 }
 

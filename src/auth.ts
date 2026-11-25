@@ -1,29 +1,26 @@
 /**
- * One shared secret, compared without leaking where the first byte differs.
- *
- * This is deliberately small: the server is a personal research tool, not a
- * multi-tenant service. If it ever holds someone else's account, replace this
- * with the OAuth provider (`@cloudflare/workers-oauth-provider`), which is
- * what the sibling whatsapp-mcp worker does.
+ * One shared secret. A personal server does not need OAuth, and a token the
+ * client pastes into its config is enough.
  */
+
+/** Compare two secrets in constant time, so timing leaks nothing. */
 export async function tokenMatches(presented: string, expected: string): Promise<boolean> {
   const encoder = new TextEncoder()
-  const [a, b] = await Promise.all([
+  const [left, right] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(presented)),
     crypto.subtle.digest("SHA-256", encoder.encode(expected)),
   ])
-  const left = new Uint8Array(a)
-  const right = new Uint8Array(b)
+  const a = new Uint8Array(left)
+  const b = new Uint8Array(right)
   let diff = 0
-  for (let index = 0; index < left.length; index += 1)
-    diff |= (left[index] ?? 0) ^ (right[index] ?? 0)
+  for (let index = 0; index < a.length; index += 1) diff |= (a[index] ?? 0) ^ (b[index] ?? 0)
   return diff === 0
 }
 
 export function presentedToken(request: Request): string | null {
   const header = request.headers.get("authorization")
   if (header?.toLowerCase().startsWith("bearer ")) return header.slice(7).trim()
-  // Some MCP clients only let you paste a URL, so accept the token there too.
+  // Some clients only accept a URL, so the query string is the fallback.
   return new URL(request.url).searchParams.get("token")
 }
 

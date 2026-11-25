@@ -12,9 +12,17 @@ import { BROWSER_HEADERS, fetchBytes } from "./http"
  *   r2: a copy in the bucket, when the binding exists.
  */
 
+export type Size = "sml" | "med" | "lrg" | "xlg"
+
+const PHOTO_SIZE = /\/(sml|med|lrg|xlg)\//
 const MAX_INLINE_BYTES = 700_000
 const MAX_STORED_BYTES = 40_000_000
 const ALLOWED_HOSTS = new Set(["www.quintoandar.com.br", "static.quintoandar.com.br"])
+
+/** The same photo at another size: the size is a path segment. */
+export function atSize(url: string, size: Size): string {
+  return url.replace(PHOTO_SIZE, `/${size}/`)
+}
 
 export function assertMediaHost(url: string): URL {
   const parsed = new URL(url)
