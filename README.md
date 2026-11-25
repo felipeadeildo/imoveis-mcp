@@ -20,8 +20,9 @@ files.
 
 A search reports how many listings the source says exist, so the agent can tell
 when the result is a slice of a bigger market. `deep: true` widens the search to
-the neighbourhoods of a city, or to the streets of a neighbourhood, and costs a
-few more requests.
+the neighbourhoods of a city, or to the streets of a neighbourhood. On a city
+that means a sample across the whole city, not one area, and it costs a few more
+requests.
 
 ## Media without a bucket
 
@@ -41,9 +42,8 @@ with a cost and a lifetime. To enable it, uncomment the `r2_buckets` entry in
 ## Deploy
 
 The button above clones this repository into your GitHub account, creates the
-Worker and deploys it. You pick the Worker name and the repository name, then
-paste the value for `MCP_TOKEN`, which the setup asks for because it is declared
-in `wrangler.jsonc`:
+Worker and deploys it. You pick the Worker and repository names, then paste a
+value for `MCP_TOKEN`:
 
 ```bash
 openssl rand -hex 32
@@ -52,7 +52,7 @@ openssl rand -hex 32
 That token is the whole secret. Anyone with it can call the tools, so keep it in
 a password manager and hand it only to the client you use.
 
-Deploying by hand takes two commands:
+Deploying by hand takes three commands:
 
 ```bash
 bunx wrangler login
@@ -75,17 +75,17 @@ Nothing else is required. There is no database, no queue and no Durable Object.
 If you connect the repository through Workers Builds instead of the button, the
 settings are:
 
-| Field            | Value                   |
-| ---------------- | ----------------------- |
-| Build command    | leave empty             |
-| Deploy command   | `bunx wrangler deploy`  |
-| Preview command  | `bunx wrangler preview` |
-| Root directory   | `/`                     |
-| Environment vars | none needed             |
+| Field            | Value                                    |
+| ---------------- | ---------------------------------------- |
+| Build command    | leave empty                              |
+| Deploy command   | `bunx wrangler deploy`                   |
+| Preview command  | `bunx wrangler preview` (beta), or empty |
+| Root directory   | `/`                                      |
+| Environment vars | none needed                              |
 
-`MCP_TOKEN` is a secret, not a variable. Add it under Settings, Variables and
-Secrets, or run `bunx wrangler secret put MCP_TOKEN`. Until it exists the Worker
-deploys and answers 401, so the deploy itself does not need it.
+`MCP_TOKEN` is a secret, not a variable. Set it with
+`bunx wrangler secret put MCP_TOKEN`, or under Settings, Variables and Secrets in
+the dashboard. Until it is set, every MCP request answers 401.
 
 There is no build step. The entry is TypeScript and Wrangler bundles it, so an
 empty build command is correct. `npx wrangler deploy` works if the image has no

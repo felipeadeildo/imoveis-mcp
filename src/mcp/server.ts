@@ -159,7 +159,7 @@ const SearchInput = z.object({
     .boolean()
     .default(false)
     .describe(
-      "Follow the areas the page links to. Costs several fetches; use it when the first search is thin.",
+      "Follow the areas the page links to: neighbourhoods of a city, or streets of a neighbourhood. A deep city search samples across the whole city. Costs several fetches.",
     ),
   sort: z.enum(["price_asc", "price_desc", "area_desc", "newest"]).default("price_asc"),
   limit: z.number().int().min(1).max(60).default(20),
