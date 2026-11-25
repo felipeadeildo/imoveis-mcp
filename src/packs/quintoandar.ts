@@ -189,7 +189,9 @@ export function parseSearchPage(html: string, business: Business): SearchPage {
 
   const visibleHouses = asRecord(asRecord(state.search).visibleHouses)
   const region = asRecord(asRecord(asRecord(state.search).region).info)
-  const selfSlug = asString(region.citySlug) ?? asString(region.slug)
+  // The page's own slug, not the city's: on a neighbourhood page `citySlug` is
+  // the city, and using it would widen the crawl to every neighbourhood.
+  const selfSlug = asString(region.slug) ?? asString(region.citySlug)
   return {
     listings,
     cities,

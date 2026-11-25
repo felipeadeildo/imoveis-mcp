@@ -264,6 +264,31 @@ describe("crawl", () => {
   })
 })
 
+test("a neighbourhood page links to its streets, not to other neighbourhoods", () => {
+  // `citySlug` on a neighbourhood page is the city, so reading it would widen a
+  // deep search to every neighbourhood. The page's own `slug` keeps it inside.
+  const page = {
+    props: {
+      pageProps: {
+        initialState: {
+          search: {
+            region: {
+              info: { slug: "vila-mariana-sao-paulo-sp-brasil", citySlug: "sao-paulo-sp-brasil" },
+            },
+            visibleHouses: { total: 10 },
+          },
+          houses: {},
+        },
+      },
+    },
+  }
+  const html = `${pageOf(page)}<a href="/alugar/imovel/rua-cubatao-vila-mariana-sao-paulo-sp-brasil">r</a><a href="/alugar/imovel/liberdade-sao-paulo-sp-brasil">l</a>`
+  const parsed = parseSearchPage(html, "rent")
+  expect(parsed.areas).toEqual([
+    { name: "rua cubatao", slug: "rua-cubatao-vila-mariana-sao-paulo-sp-brasil" },
+  ])
+})
+
 test("nextData survives a page without the script", () => {
   expect(nextData("<html><body>nothing</body></html>")).toBeNull()
 })
