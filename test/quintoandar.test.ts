@@ -264,7 +264,36 @@ describe("crawl", () => {
   })
 })
 
-test("a neighbourhood page links to its streets, not to other neighbourhoods", () => {
+test("a search card reports pets and furniture from its amenity list", () => {
+  // Cards have no acceptsPets or isFurnished field; both facts only exist as
+  // amenity keys, which is why filtering on the fields found nothing.
+  const card = { id: "1", type: "Apartamento", rentPrice: 1000, area: 40 }
+  const page = {
+    props: {
+      pageProps: {
+        initialState: {
+          houses: { [card.id]: { ...card, amenities: ["PODE_TER_ANIMAIS_DE_ESTIMACAO", "BOX"] } },
+        },
+      },
+    },
+  }
+  const [listing] = parseSearchPage(pageOf(page), "rent").listings
+  expect(listing?.acceptsPets).toBe(true)
+  expect(listing?.furnished).toBe(false)
+
+  const furnished = {
+    props: {
+      pageProps: {
+        initialState: {
+          houses: { [card.id]: { ...card, amenities: [{ key: "MOBILIADO", value: "SIM" }] } },
+        },
+      },
+    },
+  }
+  expect(parseSearchPage(pageOf(furnished), "rent").listings[0]?.furnished).toBe(true)
+})
+
+test("a neighbourhood page marks streets apart from its neighbours", () => {
   // `citySlug` on a neighbourhood page is the city, so reading it would widen a
   // deep search to every neighbourhood. The page's own `slug` keeps it inside.
   const page = {
@@ -285,7 +314,7 @@ test("a neighbourhood page links to its streets, not to other neighbourhoods", (
   const html = `${pageOf(page)}<a href="/alugar/imovel/rua-cubatao-vila-mariana-sao-paulo-sp-brasil">r</a><a href="/alugar/imovel/liberdade-sao-paulo-sp-brasil">l</a>`
   const parsed = parseSearchPage(html, "rent")
   expect(parsed.areas).toEqual([
-    { name: "rua cubatao", slug: "rua-cubatao-vila-mariana-sao-paulo-sp-brasil" },
+    { name: "rua cubatao", slug: "rua-cubatao-vila-mariana-sao-paulo-sp-brasil", kind: "street" },
   ])
 })
 

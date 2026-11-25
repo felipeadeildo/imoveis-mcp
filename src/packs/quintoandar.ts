@@ -76,6 +76,24 @@ function humanizeKey(key: string): string {
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
+/** Amenity keys that state a fact the card has no field for. */
+const PETS_AMENITY = "PODE_TER_ANIMAIS_DE_ESTIMACAO"
+const FURNISHED_AMENITY = "MOBILIADO"
+
+function hasAmenity(raw: Record<string, unknown>, key: string): boolean {
+  for (const entry of asList(raw.amenities)) {
+    if (typeof entry === "string") {
+      if (entry === key) return true
+      continue
+    }
+    const amenity = asRecord(entry)
+    if (asString(amenity.key) !== key) continue
+    const value = asString(amenity.value)
+    if (value === null || value === "SIM") return true
+  }
+  return false
+}
+
 function amenitiesOf(raw: Record<string, unknown>): string[] {
   const out: string[] = []
   for (const entry of asList(raw.amenities)) {
@@ -131,8 +149,11 @@ function listingOf(
     bathrooms: toNumber(raw.bathrooms),
     suites: toNumber(raw.suites),
     parkingSpots: toNumber(raw.parkingSpaces ?? raw.parkingSpots),
-    furnished: raw.isFurnished === true || raw.hasFurniture === true,
-    acceptsPets: asBoolean(raw.acceptsPets),
+    // Search cards carry neither field: the fact lives in the amenity list
+    // there, and as a boolean on the detail page. Read both.
+    furnished:
+      raw.isFurnished === true || raw.hasFurniture === true || hasAmenity(raw, FURNISHED_AMENITY),
+    acceptsPets: asBoolean(raw.acceptsPets) ?? (hasAmenity(raw, PETS_AMENITY) ? true : null),
     address: asString(address.address) ?? asString(address.street),
     neighborhood:
       asString(raw.neighbourhood) ?? asString(address.neighborhood) ?? asString(raw.regionName),
@@ -200,11 +221,29 @@ export function parseSearchPage(html: string, business: Business): SearchPage {
   }
 }
 
+/** First slug words that name a street rather than a place. */
+const STREET_WORDS = new Set([
+  "rua",
+  "avenida",
+  "alameda",
+  "travessa",
+  "praca",
+  "estrada",
+  "rodovia",
+  "largo",
+  "viaduto",
+  "viela",
+  "beco",
+  "passagem",
+  "calcada",
+])
+
 /**
  * The narrower pages a search page links to. On a city page these are its
- * neighbourhoods; on a neighbourhood page they are the streets inside it. The
- * slug is kept whole, exactly as linked, so it can be fetched back without
- * rebuilding it; the name drops the city part for display.
+ * neighbourhoods; on a neighbourhood page they are the streets inside it, and
+ * also its neighbours, which the `kind` tells apart. The slug is kept whole,
+ * exactly as linked, so it can be fetched back without rebuilding it; the name
+ * drops the city part for display.
  */
 function linkedAreas(html: string, business: Business, selfSlug: string): Area[] {
   const prefix = searchPath(business, "")
@@ -218,7 +257,8 @@ function linkedAreas(html: string, business: Business, selfSlug: string): Area[]
     const name = slug.slice(0, -suffix.length)
     if (!name || seen.has(name)) continue
     seen.add(name)
-    areas.push({ name: name.replace(/-/g, " "), slug })
+    const kind = STREET_WORDS.has(name.split("-")[0] ?? "") ? "street" : "area"
+    areas.push({ name: name.replace(/-/g, " "), slug, kind })
   }
   return areas
 }
@@ -337,10 +377,12 @@ async function crawl(env: Env, business: Business, seed: string, maxPages: numbe
   const seedPage = await read(seed, 1)
   if (maxPages > 1) await read(seed, 2)
 
-  // Areas in the order the page links them. The page repeats some, and `read`
-  // does not deduplicate, so the budget can be spent twice on the same slug;
-  // skipping a slug already read keeps each area at one fetch.
-  for (const area of seedPage.areas) {
+  // Streets first: they sit inside the seed area, so a deep search stays in it
+  // instead of drifting into the neighbours the page also links.
+  const ordered = [...seedPage.areas].sort((a, b) =>
+    a.kind === b.kind ? 0 : a.kind === "street" ? -1 : 1,
+  )
+  for (const area of ordered) {
     if (pagesFetched >= maxPages) break
     if (crawled.has(area.slug)) continue
     await read(area.slug, 1)

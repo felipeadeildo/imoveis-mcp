@@ -64,6 +64,11 @@ export interface SearchQuery {
 export interface Area {
   name: string
   slug: string
+  /**
+   * `street` for a street inside the page's own area, `area` for a neighbouring
+   * one. A neighbourhood page links both, and only the streets stay inside it.
+   */
+  kind: "street" | "area"
 }
 
 export interface SearchResult {
