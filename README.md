@@ -140,6 +140,9 @@ The token can also come as `?token=`, for clients that only accept a URL.
 | `GET /health`                               | none   | `{ ok: true }`                               |
 | `GET /.well-known/oauth-protected-resource` | none   | metadata a 401 points at                     |
 
+Furniture and pets are the portal's own claim. A flat can be marked furnished
+while its photos show empty rooms, so check the amenity list before trusting it.
+
 ## Adding a source
 
 A source is one file in `src/packs` that returns the shapes in
