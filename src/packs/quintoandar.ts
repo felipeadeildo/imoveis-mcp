@@ -80,37 +80,39 @@ function humanizeKey(key: string): string {
 const PETS_AMENITY = "PODE_TER_ANIMAIS_DE_ESTIMACAO"
 const FURNISHED_AMENITY = "MOBILIADO"
 
-function hasAmenity(raw: Record<string, unknown>, key: string): boolean {
-  for (const entry of asList(raw.amenities)) {
-    if (typeof entry === "string") {
-      if (entry === key) return true
-      continue
-    }
-    const amenity = asRecord(entry)
-    if (asString(amenity.key) !== key) continue
-    const value = asString(amenity.value)
-    if (value === null || value === "SIM") return true
-  }
-  return false
+interface Amenity {
+  key: string | null
+  text: string
 }
 
-function amenitiesOf(raw: Record<string, unknown>): string[] {
-  const out: string[] = []
+/**
+ * The amenities the listing claims. A search card sends bare keys; a detail
+ * page sends a checklist with SIM, NAO or NAO_INFORMADO per item, where only
+ * SIM is a claim about the flat.
+ */
+function confirmedAmenities(raw: Record<string, unknown>): Amenity[] {
+  const out = new Map<string, Amenity>()
   for (const entry of asList(raw.amenities)) {
     if (typeof entry === "string") {
-      out.push(humanizeKey(entry))
+      out.set(entry, { key: entry, text: humanizeKey(entry) })
       continue
     }
     const amenity = asRecord(entry)
-    // Detail pages carry a checklist with SIM, NAO or NAO_INFORMADO per item.
-    // Only SIM is a claim about the flat; the other two are not.
     const value = asString(amenity.value)
     if (value !== null && value !== "SIM") continue
     const key = asString(amenity.key)
     const text = asString(amenity.text) ?? (key ? humanizeKey(key) : null)
-    if (text) out.push(text)
+    if (text) out.set(key ?? text, { key, text })
   }
-  return [...new Set(out)]
+  return [...out.values()]
+}
+
+function hasAmenity(raw: Record<string, unknown>, key: string): boolean {
+  return confirmedAmenities(raw).some((amenity) => amenity.key === key)
+}
+
+function amenitiesOf(raw: Record<string, unknown>): string[] {
+  return confirmedAmenities(raw).map((amenity) => amenity.text)
 }
 
 function photosOf(raw: Record<string, unknown>): Photo[] {

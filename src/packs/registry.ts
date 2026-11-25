@@ -18,13 +18,16 @@ function unreachable(id: string) {
   }
 }
 
+/** Why the four blocked sources are listed at all: the model gets an answer. */
+const BLOCKED = "The site answers 403 to this worker's IP, so it cannot be read from here."
+
 export const SOURCES: SourceEntry[] = [
   quintoandar,
   {
     id: "zap",
     label: "ZAP Imóveis",
     reachable: false,
-    note: "Not available from this server.",
+    note: BLOCKED,
     search: unreachable("zap"),
     detail: unreachable("zap"),
   },
@@ -32,7 +35,7 @@ export const SOURCES: SourceEntry[] = [
     id: "vivareal",
     label: "VivaReal",
     reachable: false,
-    note: "Not available from this server.",
+    note: BLOCKED,
     search: unreachable("vivareal"),
     detail: unreachable("vivareal"),
   },
@@ -40,7 +43,7 @@ export const SOURCES: SourceEntry[] = [
     id: "olx",
     label: "OLX Imóveis",
     reachable: false,
-    note: "Not available from this server.",
+    note: BLOCKED,
     search: unreachable("olx"),
     detail: unreachable("olx"),
   },
@@ -48,7 +51,7 @@ export const SOURCES: SourceEntry[] = [
     id: "imovelweb",
     label: "Imovelweb",
     reachable: false,
-    note: "Not available from this server.",
+    note: BLOCKED,
     search: unreachable("imovelweb"),
     detail: unreachable("imovelweb"),
   },

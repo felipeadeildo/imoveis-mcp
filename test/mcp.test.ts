@@ -213,7 +213,7 @@ describe("mcp surface", () => {
     const payload = JSON.parse((result.content as { type: string; text: string }[])[0]!.text)
     const zap = payload.sources.find((source: { id: string }) => source.id === "zap")
     expect(zap.reachable).toBe(false)
-    expect(zap.note).toMatch(/not available/i)
+    expect(zap.note).toMatch(/403/)
     await client.close()
   })
 })
