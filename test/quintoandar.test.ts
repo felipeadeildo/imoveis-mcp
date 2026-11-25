@@ -135,7 +135,7 @@ describe("detail page", () => {
         bedrooms: 1,
         bathrooms: 1,
         suites: 0,
-        parkingSpots: null,
+        parkingSpots: 0,
         acceptsPets: false,
         neighborhood: "Vila Campanela",
         city: "São Paulo",
@@ -144,8 +144,13 @@ describe("detail page", () => {
       })
       expect(listing.lat).toBeCloseTo(-23.5383, 3)
       expect(listing.lng).toBeCloseTo(-46.4604, 3)
-      expect(listing.amenities).toContain("Box")
-      expect(listing.amenities).not.toContain("Varanda")
+      // Only the SIM items are claims about the flat; NAO and NAO_INFORMADO are not.
+      expect(listing.amenities).toEqual([
+        "Box",
+        "Armários na cozinha",
+        "Quartos e corredores com portas amplas",
+        "Área de serviço",
+      ])
       expect(listing.photos).toHaveLength(22)
       expect(listing.video).toBeNull()
     } finally {

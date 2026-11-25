@@ -84,8 +84,10 @@ function amenitiesOf(raw: Record<string, unknown>): string[] {
       continue
     }
     const amenity = asRecord(entry)
-    // Detail pages list every amenity with SIM or NAO; keep the SIM ones.
-    if (amenity.value === "NAO") continue
+    // Detail pages carry a checklist with SIM, NAO or NAO_INFORMADO per item.
+    // Only SIM is a claim about the flat; the other two are not.
+    const value = asString(amenity.value)
+    if (value !== null && value !== "SIM") continue
     const key = asString(amenity.key)
     const text = asString(amenity.text) ?? (key ? humanizeKey(key) : null)
     if (text) out.push(text)
@@ -128,7 +130,7 @@ function listingOf(
     bedrooms: toNumber(raw.bedrooms),
     bathrooms: toNumber(raw.bathrooms),
     suites: toNumber(raw.suites),
-    parkingSpots: toNumber(raw.parkingSpots),
+    parkingSpots: toNumber(raw.parkingSpaces ?? raw.parkingSpots),
     furnished: raw.isFurnished === true || raw.hasFurniture === true,
     acceptsPets: asBoolean(raw.acceptsPets),
     address: asString(address.address) ?? asString(address.street),
