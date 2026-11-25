@@ -17,12 +17,13 @@ files.
 | `list_sources`     | Which sources this server can read right now.                                                                                                                 |
 
 A search reports how many listings the source says exist, so the agent can tell
-when one page is not the whole answer. Asking for `deep: true` follows the areas
-the page links to, which costs a few more requests and returns more listings.
+when the result is a slice of a bigger market. `deep: true` widens the search to
+the neighbourhoods of a city, or to the streets of a neighbourhood, and costs a
+few more requests.
 
 ## Media without a bucket
 
-Three ways to hand media over. Only the last one stores anything:
+Three ways to hand media over. Only the last one keeps a copy:
 
 | `serve`              | Where the link points                                 | Keeps a copy |
 | -------------------- | ----------------------------------------------------- | ------------ |
@@ -85,23 +86,23 @@ The token can also come as `?token=`, for clients that only accept a URL.
 
 ## Endpoints
 
-| Route                                       | Auth   | What                                                        |
-| ------------------------------------------- | ------ | ----------------------------------------------------------- |
-| `POST /mcp`                                 | bearer | MCP over streamable HTTP, stateless                         |
-| `GET /media/proxy?src=…`                    | none   | stream one file from an allowed host, ranges passed through |
-| `GET /media/<key>`                          | none   | an object from the bucket, when one is bound                |
-| `GET /`                                     | none   | what this server is, and its sources                        |
-| `GET /health`                               | none   | `{ ok: true }`                                              |
-| `GET /.well-known/oauth-protected-resource` | none   | metadata a 401 points at                                    |
+| Route                                       | Auth   | What                                         |
+| ------------------------------------------- | ------ | -------------------------------------------- |
+| `POST /mcp`                                 | bearer | MCP over streamable HTTP, stateless          |
+| `GET /media/proxy?src=…`                    | none   | stream one media file, ranges passed through |
+| `GET /media/<key>`                          | none   | an object from the bucket, when one is bound |
+| `GET /`                                     | none   | what this server is, and its sources         |
+| `GET /health`                               | none   | `{ ok: true }`                               |
+| `GET /.well-known/oauth-protected-resource` | none   | metadata a 401 points at                     |
 
 ## Adding a source
 
 A source is one file in `src/packs` that returns the shapes in
-`src/packs/types.ts`, plus one line in `src/packs/registry.ts`. A source that
+`src/packs/types.ts`, plus one line in `src/packs/registry.ts`. A site that
 cannot be read belongs in the registry too, marked unavailable, so the agent
 gets an answer instead of a failed request.
 
 ## Disclaimer
 
-Unofficial, not affiliated with any listing site. It reads the public pages that
-any browser can read, for one person's own search.
+Unofficial, not affiliated with any listing site. It reads public listings for
+one person's own apartment search.
