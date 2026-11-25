@@ -5,6 +5,9 @@
   "compatibility_date": "2026-11-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Declared so `wrangler types` and `wrangler deploy` know the worker needs it,
+  // without the value ever living in this file.
+  "secrets": { "required": ["MCP_TOKEN"] },
   "vars": {
     // Set it to your deployed origin; media links and the proxy are built from it.
     "PUBLIC_BASE": "http://localhost:8787",
