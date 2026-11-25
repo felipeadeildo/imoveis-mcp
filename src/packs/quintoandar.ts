@@ -379,7 +379,7 @@ async function crawl(env: Env, business: Business, seed: string, maxPages: numbe
 
   // Streets first: they sit inside the seed area, so a deep search stays in it
   // instead of drifting into the neighbours the page also links.
-  const ordered = [...seedPage.areas].sort((a, b) =>
+  const ordered = seedPage.areas.toSorted((a, b) =>
     a.kind === b.kind ? 0 : a.kind === "street" ? -1 : 1,
   )
   for (const area of ordered) {
